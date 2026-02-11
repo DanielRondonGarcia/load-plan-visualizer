@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  load-plan-visualizer:
+    image: danielrondongarcia/load-plan-visualizer:latest
+    container_name: load-plan-visualizer
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.loadplan.rule=Host(`loadplan.local`)"
+      - "traefik.http.services.loadplan.loadbalancer.server.port=3000"
+    networks:
+      - app-network
+    # Optional: Mount custom configuration
+    # volumes:
+    #   - ./config:/app/config:ro
+    # Optional: Resource limits
+    # deploy:
+    #   resources:
+    #     limits:
+    #       cpus: '0.5'
+    #       memory: 512M
+    #     reservations:
+    #       cpus: '0.25'
+    #       memory: 256M
+
+# Optional: Add reverse proxy
+# services:
+#   traefik:
+#     image: traefik:v2.10
+#     command:
+#       - "--api.insecure=true"
+#       - "--providers.docker=true"
+#       - "--entrypoints.web.address=:80"
+#     ports:
+#       - "80:80"
+#       - "8080:8080"
+#     volumes:
+#       - /var/run/docker.sock:/var/run/docker.sock
+
+networks:
+  app-network:
+    driver: bridge
+    name: load-plan-network

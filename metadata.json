@@ -1,0 +1,5 @@
+{
+  "name": "Load Plan Visualizer",
+  "description": "Interactive visualization and editor for load testing JSON plans. Visualize scenarios, edit phases, and export results.",
+  "requestFramePermissions": []
+}

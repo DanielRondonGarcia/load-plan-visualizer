@@ -112,10 +112,11 @@ const formatTime = (minutes: number): string => {
   return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
 };
 
-// Scales the plan duration and metrics by a percentage
-export const scalePlan = (plan: LoadPlan, percentage: number): LoadPlan => {
-  if (percentage === 100) return plan;
-  const ratio = percentage / 100;
+// Scales the plan duration and metrics by separate percentages for VU and Time
+export const scalePlan = (plan: LoadPlan, vuPercentage: number, timePercentage: number): LoadPlan => {
+  if (vuPercentage === 100 && timePercentage === 100) return plan;
+  const vuRatio = vuPercentage / 100;
+  const timeRatio = timePercentage / 100;
 
   // We need to determine keys once
   const keysToScale = getMetricKeys(plan.phases);
@@ -125,12 +126,14 @@ export const scalePlan = (plan: LoadPlan, percentage: number): LoadPlan => {
     
     // Scale Duration
     const originalDuration = parseDuration(p.duration);
-    newPhase.duration = stringifyDuration(originalDuration * ratio);
+    newPhase.duration = stringifyDuration(originalDuration * timeRatio);
 
     // Scale Metrics (VUs) - Rounding to nearest integer for realistic VUs
+    // Ensure minimum VU is always 1
     keysToScale.forEach(key => {
        if (typeof p[key] === 'number') {
-         newPhase[key] = Math.round((p[key] as number) * ratio);
+         const scaledValue = Math.round((p[key] as number) * vuRatio);
+         newPhase[key] = Math.max(1, scaledValue); // Ensure minimum of 1 VU
        }
     });
 
@@ -139,7 +142,7 @@ export const scalePlan = (plan: LoadPlan, percentage: number): LoadPlan => {
 
   return {
     ...plan,
-    planName: `${plan.planName} (Scaled ${percentage}%)`,
+    planName: `${plan.planName} (VU: ${vuPercentage}%, Time: ${timePercentage}%)`,
     phases: newPhases
   };
 };

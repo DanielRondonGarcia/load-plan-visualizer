@@ -5,7 +5,8 @@ import { Trash2, Plus, X, AlertTriangle } from 'lucide-react';
 
 interface Props {
   plan: LoadPlan;
-  scalePercentage?: number;
+  vuScalePercentage?: number;
+  timeScalePercentage?: number;
   onUpdatePhase: (index: number, field: string, value: string | number) => void;
   onAddPhase: () => void;
   onRemovePhase: (index: number) => void;
@@ -15,7 +16,7 @@ interface Props {
 
 const MAX_DESC_LENGTH = 100;
 
-export const PhaseEditor: React.FC<Props> = ({ plan, scalePercentage = 100, onUpdatePhase, onAddPhase, onRemovePhase, onAddMetric, onRemoveMetric }) => {
+export const PhaseEditor: React.FC<Props> = ({ plan, vuScalePercentage = 100, timeScalePercentage = 100, onUpdatePhase, onAddPhase, onRemovePhase, onAddMetric, onRemoveMetric }) => {
   const metricKeys = getMetricKeys(plan.phases);
   const notesMap = parseNotes(plan.defaults.notes);
 
@@ -55,11 +56,11 @@ export const PhaseEditor: React.FC<Props> = ({ plan, scalePercentage = 100, onUp
             </div>
         </div>
 
-        {scalePercentage !== 100 && (
+        {(vuScalePercentage !== 100 || timeScalePercentage !== 100) && (
           <div className="bg-amber-50 border border-amber-200 text-amber-700 px-3 py-2 rounded-md text-sm flex items-center gap-2 animate-in fade-in slide-in-from-top-1">
             <AlertTriangle size={16} />
             <span>
-              <strong>Scaling Active ({scalePercentage}%):</strong> You are editing the <strong>Base Plan (100%)</strong> values. Charts and exports reflect the scaled percentage.
+              <strong>Scaling Active (VU: {vuScalePercentage}%, Time: {timeScalePercentage}%):</strong> You are editing the <strong>Base Plan (100%)</strong> values. Charts and exports reflect the scaled percentages.
             </span>
           </div>
         )}

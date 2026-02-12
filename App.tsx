@@ -12,7 +12,9 @@ import { getMetricKeys, parseNotes, scalePlan } from './utils';
 
 function App() {
   const [plan, setPlan] = useState<LoadPlan>(INITIAL_PLAN);
-  const [scalePercentage, setScalePercentage] = useState<number>(100);
+  const [vuScalePercentage, setVuScalePercentage] = useState<number>(100);
+  const [timeScalePercentage, setTimeScalePercentage] = useState<number>(100);
+  const [isScaleLinked, setIsScaleLinked] = useState<boolean>(true);
   
   // Ref for the entire report container (charts + summary)
   const reportRef = useRef<HTMLDivElement>(null);
@@ -20,8 +22,8 @@ function App() {
   // Derived state: Scaled plan for visualization and export
   // The Editor continues to use the raw 'plan' to prevent data loss due to rounding when scaling back and forth
   const scaledPlan = useMemo(() => {
-    return scalePlan(plan, scalePercentage);
-  }, [plan, scalePercentage]);
+    return scalePlan(plan, vuScalePercentage, timeScalePercentage);
+  }, [plan, vuScalePercentage, timeScalePercentage]);
 
   // Memoize keys to render individual charts efficiently
   const metricKeys = useMemo(() => getMetricKeys(plan.phases), [plan.phases]);
@@ -31,6 +33,30 @@ function App() {
       ...prev,
       [field]: value,
     }));
+  };
+
+  const handleVuScaleChange = (value: number) => {
+    setVuScalePercentage(value);
+    if (isScaleLinked) {
+      setTimeScalePercentage(value);
+    }
+  };
+
+  const handleTimeScaleChange = (value: number) => {
+    setTimeScalePercentage(value);
+    if (isScaleLinked) {
+      setVuScalePercentage(value);
+    }
+  };
+
+  const handleScaleLinkToggle = () => {
+    setIsScaleLinked(!isScaleLinked);
+  };
+
+  const handleResetScale = () => {
+    setVuScalePercentage(100);
+    setTimeScalePercentage(100);
+    setIsScaleLinked(true);
   };
 
   const handleUpdatePhase = (index: number, field: string, value: string | number) => {
@@ -125,7 +151,7 @@ function App() {
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(scaledPlan, null, 2));
     const downloadAnchorNode = document.createElement('a');
     downloadAnchorNode.setAttribute("href", dataStr);
-    downloadAnchorNode.setAttribute("download", `load-plan-${scalePercentage}pct-${new Date().toISOString().slice(0, 10)}.json`);
+    downloadAnchorNode.setAttribute("download", `load-plan-VU${vuScalePercentage}pct-TIME${timeScalePercentage}pct-${new Date().toISOString().slice(0, 10)}.json`);
     document.body.appendChild(downloadAnchorNode);
     downloadAnchorNode.click();
     downloadAnchorNode.remove();
@@ -142,7 +168,9 @@ function App() {
         // Basic validation could go here
         if (json.phases && Array.isArray(json.phases)) {
             setPlan(json);
-            setScalePercentage(100); // Reset scale on import
+            setVuScalePercentage(100); // Reset scale on import
+            setTimeScalePercentage(100); // Reset scale on import
+            setIsScaleLinked(true); // Reset link state
         } else {
             alert("Invalid JSON format: missing 'phases' array.");
         }
@@ -172,14 +200,14 @@ function App() {
     })
       .then((dataUrl) => {
         const link = document.createElement('a');
-        link.download = `load-plan-report-${scalePercentage}pct-${new Date().toISOString().slice(0, 10)}.png`;
+        link.download = `load-plan-report-VU${vuScalePercentage}pct-TIME${timeScalePercentage}pct-${new Date().toISOString().slice(0, 10)}.png`;
         link.href = dataUrl;
         link.click();
       })
       .catch((err) => {
         console.error('Error generating image', err);
       });
-  }, [reportRef, scalePercentage]);
+  }, [reportRef, vuScalePercentage, timeScalePercentage]);
 
   return (
     <div className="min-h-screen bg-slate-100 p-4 md:p-8 font-sans">
@@ -191,8 +219,13 @@ function App() {
 
         <PlanHeader 
           plan={plan} 
-          scalePercentage={scalePercentage}
-          onScaleChange={setScalePercentage}
+          vuScalePercentage={vuScalePercentage}
+          timeScalePercentage={timeScalePercentage}
+          isScaleLinked={isScaleLinked}
+          onVuScaleChange={handleVuScaleChange}
+          onTimeScaleChange={handleTimeScaleChange}
+          onScaleLinkToggle={handleScaleLinkToggle}
+          onResetScale={handleResetScale}
           onUpdate={handleUpdateMeta} 
           onImport={handleImportJson}
           onExportJson={handleExportJson}
@@ -214,7 +247,7 @@ function App() {
               {/* Main Consolidated Chart - Uses SCALED plan */}
               <PlanChart 
                 plan={scaledPlan} 
-                title={scalePercentage < 100 ? `Load Scenarios Overview (Scaled ${scalePercentage}%)` : undefined}
+                title={(vuScalePercentage !== 100 || timeScalePercentage !== 100) ? `Load Scenarios Overview (VU: ${vuScalePercentage}%, Time: ${timeScalePercentage}%)` : undefined}
               />
 
               {/* Individual Charts Grid - Uses SCALED plan */}
@@ -225,7 +258,7 @@ function App() {
                           plan={scaledPlan} 
                           metricKey={key}
                           className="h-[300px]"
-                          title={`${parseNotes(plan.defaults.notes)[key] || key} (Scaled ${scalePercentage}%)`}
+                          title={`${parseNotes(plan.defaults.notes)[key] || key} (VU: ${vuScalePercentage}%, Time: ${timeScalePercentage}%)`}
                       />
                   ))}
               </div>
@@ -234,7 +267,8 @@ function App() {
               <PlanSummary 
                 plan={scaledPlan} 
                 rawPlan={plan}
-                scalePercentage={scalePercentage} 
+                vuScalePercentage={vuScalePercentage}
+                timeScalePercentage={timeScalePercentage}
                 onUpdatePhase={handleUpdatePhase}
                 onAddPhase={handleAddPhase}
                 onRemovePhase={handleRemovePhase}

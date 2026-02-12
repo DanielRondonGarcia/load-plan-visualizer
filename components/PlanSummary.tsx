@@ -7,7 +7,8 @@ import { PhaseEditor } from './PhaseEditor';
 interface Props {
   plan: LoadPlan; // Scaled plan for display
   rawPlan: LoadPlan; // Raw plan for editing
-  scalePercentage: number;
+  vuScalePercentage: number;
+  timeScalePercentage: number;
   onUpdatePhase: (index: number, field: string, value: string | number) => void;
   onAddPhase: () => void;
   onRemovePhase: (index: number) => void;
@@ -18,7 +19,8 @@ interface Props {
 export const PlanSummary: React.FC<Props> = ({ 
   plan, 
   rawPlan,
-  scalePercentage,
+  vuScalePercentage,
+  timeScalePercentage,
   onUpdatePhase,
   onAddPhase,
   onRemovePhase,
@@ -61,8 +63,12 @@ export const PlanSummary: React.FC<Props> = ({
              <span className="font-medium">{plan.nodes}</span>
            </div>
            <div>
-             <span className="block text-slate-500 text-xs uppercase">Scale Factor</span>
-             <span className="font-medium">{scalePercentage}%</span>
+             <span className="block text-slate-500 text-xs uppercase">VU Scale</span>
+             <span className="font-medium">{vuScalePercentage}%</span>
+           </div>
+           <div>
+             <span className="block text-slate-500 text-xs uppercase">Time Scale</span>
+             <span className="font-medium">{timeScalePercentage}%</span>
            </div>
         </div>
       </div>
@@ -174,7 +180,8 @@ export const PlanSummary: React.FC<Props> = ({
                      {/* We pass rawPlan here so the editor modifies the BASE values, not the scaled ones */}
                      <PhaseEditor 
                         plan={rawPlan} 
-                        scalePercentage={scalePercentage}
+                        vuScalePercentage={vuScalePercentage}
+                        timeScalePercentage={timeScalePercentage}
                         onUpdatePhase={onUpdatePhase}
                         onAddPhase={onAddPhase}
                         onRemovePhase={onRemovePhase}

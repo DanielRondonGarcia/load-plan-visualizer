@@ -129,11 +129,14 @@ export const scalePlan = (plan: LoadPlan, vuPercentage: number, timePercentage: 
     newPhase.duration = stringifyDuration(originalDuration * timeRatio);
 
     // Scale Metrics (VUs) - Rounding to nearest integer for realistic VUs
-    // Ensure minimum VU is always 1
+    // Ensure minimum VU is always 1, but preserve zero values
     keysToScale.forEach(key => {
        if (typeof p[key] === 'number') {
-         const scaledValue = Math.round((p[key] as number) * vuRatio);
-         newPhase[key] = Math.max(1, scaledValue); // Ensure minimum of 1 VU
+         const originalValue = p[key] as number;
+         const scaledValue = Math.round(originalValue * vuRatio);
+         // Only apply minimum of 1 if the original value was greater than 0
+         // This preserves intentional zero values (like disabled tests)
+         newPhase[key] = originalValue > 0 ? Math.max(1, scaledValue) : scaledValue;
        }
     });
 

@@ -56,7 +56,7 @@ A modern React application for designing and visualizing load plans with interac
 docker buildx build `
   --platform linux/amd64,linux/arm64 `
   --tag danielrondongarcia/load-plan-visualizer:latest `
-  --tag danielrondongarcia/load-plan-visualizer:v1.0.0 `
+  --tag danielrondongarcia/load-plan-visualizer:v1.0.1 `
   --push `
   .
 ```

@@ -103,6 +103,8 @@ export const PhaseEditor: React.FC<Props> = ({ plan, vuScalePercentage = 100, ti
               <th className="px-4 py-3 font-semibold text-slate-600 border-b border-slate-200 w-12 text-center">#</th>
               <th className="px-4 py-3 font-semibold text-slate-600 border-b border-slate-200 min-w-[200px]">Phase Name</th>
               <th className="px-4 py-3 font-semibold text-slate-600 border-b border-slate-200 w-24 text-center">Duration</th>
+              <th className="px-4 py-3 font-semibold text-slate-600 border-b border-slate-200 w-24 text-center">Ramp Up</th>
+              <th className="px-4 py-3 font-semibold text-slate-600 border-b border-slate-200 w-24 text-center">Ramp Down</th>
               {metricKeys.map(key => (
                 <th key={key} className="px-4 py-3 font-semibold text-slate-600 border-b border-slate-200 w-28 text-center group/th relative">
                   <div className="flex items-center justify-center gap-1">
@@ -124,6 +126,14 @@ export const PhaseEditor: React.FC<Props> = ({ plan, vuScalePercentage = 100, ti
           <tbody className="divide-y divide-slate-100">
             {plan.phases.map((phase, index) => {
               const isDurationValid = isValidDuration(phase.duration);
+              const rampUpValue = typeof phase.rampUp === 'string' ? phase.rampUp : '0m';
+              const rampDownValue = typeof phase.rampDown === 'string' ? phase.rampDown : '0m';
+              const isRampUpValid = isValidDuration(rampUpValue);
+              const isRampDownValid = isValidDuration(rampDownValue);
+              const totalMinutes = parseDuration(phase.duration);
+              const rampUpMinutes = parseDuration(rampUpValue);
+              const rampDownMinutes = parseDuration(rampDownValue);
+              const areRampsWithinDuration = rampUpMinutes + rampDownMinutes <= totalMinutes;
               return (
                 <tr key={index} className="hover:bg-slate-50 transition-colors group">
                   <td className="px-4 py-2 text-slate-400 font-mono text-xs text-center">
@@ -149,6 +159,40 @@ export const PhaseEditor: React.FC<Props> = ({ plan, vuScalePercentage = 100, ti
                       title={isDurationValid ? 'Duration (e.g. 1m, 30s)' : 'Invalid format. Use 10m, 30s, 1h.'}
                       value={phase.duration}
                       onChange={(e) => onUpdatePhase(index, 'duration', e.target.value)}
+                    />
+                  </td>
+                  <td className="px-4 py-2">
+                    <input
+                      type="text"
+                      className={`w-full bg-slate-50 border rounded px-2 py-1 focus:outline-none text-center ${
+                        isRampUpValid && areRampsWithinDuration
+                          ? 'border-slate-200 focus:border-blue-400'
+                          : 'border-red-500 focus:border-red-500 bg-red-50 text-red-600 font-medium'
+                      }`}
+                      title={
+                        isRampUpValid
+                          ? (areRampsWithinDuration ? 'Ramp up (e.g. 30s, 2m)' : 'RampUp + RampDown must be <= Duration')
+                          : 'Invalid format. Use 10m, 30s, 1h.'
+                      }
+                      value={rampUpValue}
+                      onChange={(e) => onUpdatePhase(index, 'rampUp', e.target.value)}
+                    />
+                  </td>
+                  <td className="px-4 py-2">
+                    <input
+                      type="text"
+                      className={`w-full bg-slate-50 border rounded px-2 py-1 focus:outline-none text-center ${
+                        isRampDownValid && areRampsWithinDuration
+                          ? 'border-slate-200 focus:border-blue-400'
+                          : 'border-red-500 focus:border-red-500 bg-red-50 text-red-600 font-medium'
+                      }`}
+                      title={
+                        isRampDownValid
+                          ? (areRampsWithinDuration ? 'Ramp down (e.g. 30s, 2m)' : 'RampUp + RampDown must be <= Duration')
+                          : 'Invalid format. Use 10m, 30s, 1h.'
+                      }
+                      value={rampDownValue}
+                      onChange={(e) => onUpdatePhase(index, 'rampDown', e.target.value)}
                     />
                   </td>
                   {metricKeys.map(key => (

@@ -21,6 +21,8 @@ export interface TestResources {
 export interface Phase {
   name: string;
   duration: string;
+  rampUp?: string;
+  rampDown?: string;
   description: string;
   [key: string]: string | number; // For dynamic VU keys like conUsu, updUsu, etc.
 }
@@ -28,6 +30,17 @@ export interface Phase {
 export interface Defaults {
   timeUnit: string;
   notes: string;
+}
+
+export interface TestExecutionConfig {
+  nodes: number;
+}
+
+export interface OneOffTestConfig {
+  enabled: boolean;
+  mode: string;
+  startAfter: string;
+  dependsOn: string[];
 }
 
 export interface LoadPlan {
@@ -38,6 +51,8 @@ export interface LoadPlan {
   defaults: Defaults;
   resources: Resources;
   testResources: TestResources;
+  testExecution?: Record<string, TestExecutionConfig>;
+  oneOffTests?: Record<string, OneOffTestConfig>;
   phases: Phase[];
 }
 
@@ -46,5 +61,7 @@ export interface ChartPoint {
   formattedTime: string; // HH:mm or mm string
   phaseName: string;
   description: string;
+  pointType?: string;
+  phaseIndex?: number;
   [key: string]: number | string;
 }

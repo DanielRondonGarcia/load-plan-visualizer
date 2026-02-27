@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { LoadPlan } from '../types';
+import { LoadPlan, OneOffTestConfig, ResourceConfig, TestExecutionConfig } from '../types';
 import { getMetricKeys, parseNotes } from '../utils';
 import { Edit, X } from 'lucide-react';
 import { PhaseEditor } from './PhaseEditor';
@@ -29,6 +29,8 @@ export const PlanSummary: React.FC<Props> = ({
 }) => {
   const metricKeys = getMetricKeys(plan.phases);
   const notesMap = parseNotes(plan.defaults.notes);
+  const testExecutionEntries = Object.entries(plan.testExecution ?? {}) as [string, TestExecutionConfig][];
+  const oneOffTestsEntries = Object.entries(plan.oneOffTests ?? {}) as [string, OneOffTestConfig][];
   const [showEditor, setShowEditor] = useState(false);
 
   // Lock body scroll when modal is open to prevent background scrolling
@@ -87,7 +89,7 @@ export const PlanSummary: React.FC<Props> = ({
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-200">
-                        {Object.entries(plan.resources).map(([tool, config]) => (
+                        {(Object.entries(plan.resources) as [string, ResourceConfig][]).map(([tool, config]) => (
                             <tr key={tool}>
                                 <td className="py-2 font-bold text-slate-700">{tool}</td>
                                 <td className="py-2 text-slate-600">{config.requests.cpu} / {config.requests.memory}</td>
@@ -117,6 +119,70 @@ export const PlanSummary: React.FC<Props> = ({
         </div>
       </div>
 
+      {(testExecutionEntries.length > 0 || oneOffTestsEntries.length > 0) && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {testExecutionEntries.length > 0 && (
+            <div>
+              <h3 className="font-bold text-slate-700 mb-3 border-l-4 border-cyan-500 pl-2">Test Execution</h3>
+              <div className="bg-slate-50 rounded-lg p-4 text-xs border border-slate-200 overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="border-b border-slate-200 text-slate-500">
+                      <th className="pb-2">Test</th>
+                      <th className="pb-2 text-right">Nodes</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200">
+                    {testExecutionEntries.map(([testName, config]) => (
+                      <tr key={testName}>
+                        <td className="py-2 font-mono text-slate-700">{testName}</td>
+                        <td className="py-2 text-right text-slate-600 font-mono">{config.nodes}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {oneOffTestsEntries.length > 0 && (
+            <div>
+              <h3 className="font-bold text-slate-700 mb-3 border-l-4 border-fuchsia-500 pl-2">One-off Tests</h3>
+              <div className="bg-slate-50 rounded-lg p-4 text-xs border border-slate-200 overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="border-b border-slate-200 text-slate-500">
+                      <th className="pb-2">Test</th>
+                      <th className="pb-2">Enabled</th>
+                      <th className="pb-2">Mode</th>
+                      <th className="pb-2">Start After</th>
+                      <th className="pb-2">Depends On</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200">
+                    {oneOffTestsEntries.map(([testName, config]) => (
+                      <tr key={testName}>
+                        <td className="py-2 font-mono text-slate-700">{testName}</td>
+                        <td className="py-2">
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                            config.enabled ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-600'
+                          }`}>
+                            {config.enabled ? 'ON' : 'OFF'}
+                          </span>
+                        </td>
+                        <td className="py-2 text-slate-600 font-mono">{config.mode}</td>
+                        <td className="py-2 text-slate-600 font-mono">{config.startAfter}</td>
+                        <td className="py-2 text-slate-600 font-mono">{(config.dependsOn || []).join(', ') || '-'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Phase Data Table */}
       <div>
         <div className="flex items-center gap-3 mb-3">
@@ -137,6 +203,8 @@ export const PlanSummary: React.FC<Props> = ({
                         <th className="px-4 py-3 border-b border-slate-200 w-12">#</th>
                         <th className="px-4 py-3 border-b border-slate-200">Phase Name</th>
                         <th className="px-4 py-3 border-b border-slate-200">Duration</th>
+                        <th className="px-4 py-3 border-b border-slate-200">Ramp Up</th>
+                        <th className="px-4 py-3 border-b border-slate-200">Ramp Down</th>
                         {metricKeys.map(key => (
                             <th key={key} className="px-4 py-3 border-b border-slate-200 text-center">{key}</th>
                         ))}
@@ -149,6 +217,8 @@ export const PlanSummary: React.FC<Props> = ({
                             <td className="px-4 py-2 text-slate-400 font-mono text-xs">{idx + 1}</td>
                             <td className="px-4 py-2 font-medium text-slate-700">{phase.name}</td>
                             <td className="px-4 py-2 text-slate-600">{phase.duration}</td>
+                            <td className="px-4 py-2 text-slate-600 font-mono">{phase.rampUp || '0m'}</td>
+                            <td className="px-4 py-2 text-slate-600 font-mono">{phase.rampDown || '0m'}</td>
                             {metricKeys.map(key => (
                                 <td key={key} className="px-4 py-2 text-center text-slate-600 font-mono bg-slate-50/50">
                                     {phase[key] || 0}

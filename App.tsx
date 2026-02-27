@@ -76,6 +76,8 @@ function App() {
       const newPhase: Phase = {
         name: `Phase ${prev.phases.length + 1}`,
         duration: '1m',
+        rampUp: '0m',
+        rampDown: '0m',
         description: 'New phase',
       };
       // Init metrics to 0
